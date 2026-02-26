@@ -3,6 +3,7 @@ module.exports = {
     name: 'survivor50',
     script: 'dist/index.js',
     cwd: '/home/ubuntu/Survivor50Draft/backend',
+    exec_mode: 'fork',
     instances: 1,
     autorestart: true,
     watch: false,

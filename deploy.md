@@ -59,7 +59,7 @@ sudo npm install -g pm2
 
 ```bash
 cd /home/ubuntu
-git clone https://github.com/YOUR_USERNAME/Survivor50Draft.git
+git clone https://github.com/nathanzbl/Survivor50Draft.git
 cd Survivor50Draft
 ```
 
