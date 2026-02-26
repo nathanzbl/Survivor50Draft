@@ -1,0 +1,124 @@
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { api } from '../api';
+import { Team, ScoringRule, ScoringEvent } from '../types';
+import PlayerCard from '../components/PlayerCard';
+
+export default function ScoreboardPage() {
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [rules, setRules] = useState<ScoringRule[]>([]);
+  const [events, setEvents] = useState<ScoringEvent[]>([]);
+  const [activeTab, setActiveTab] = useState<'standings' | 'rules' | 'log'>('standings');
+
+  useEffect(() => {
+    api.getTeams().then(setTeams).catch(console.error);
+    api.getScoringRules().then(setRules).catch(console.error);
+    api.getScoringEvents(100).then(setEvents).catch(console.error);
+  }, []);
+
+  return (
+    <div className="scoreboard-page">
+      <h1 className="page-title">SCOREBOARD</h1>
+
+      <div className="tab-bar">
+        <button className={`tab ${activeTab === 'standings' ? 'active' : ''}`} onClick={() => setActiveTab('standings')}>
+          Standings
+        </button>
+        <button className={`tab ${activeTab === 'rules' ? 'active' : ''}`} onClick={() => setActiveTab('rules')}>
+          Scoring Rules
+        </button>
+        <button className={`tab ${activeTab === 'log' ? 'active' : ''}`} onClick={() => setActiveTab('log')}>
+          Score Log
+        </button>
+      </div>
+
+      {activeTab === 'standings' && (
+        <div className="standings">
+          {teams.length === 0 ? (
+            <div className="empty-state">No teams yet. The draft hasn't started!</div>
+          ) : (
+            teams.map((team, idx) => (
+              <Link to={`/team/${team.id}`} key={team.id} className="team-card-link">
+                <div className="team-card">
+                  <div className="team-rank">
+                    {idx === 0 && <span className="crown">👑</span>}
+                    <span className="rank-number">#{idx + 1}</span>
+                  </div>
+                  <div className="team-header">
+                    <h3 className="team-name">{team.name}</h3>
+                    <p className="team-owner">{team.owner_name}</p>
+                  </div>
+                  <div className="team-score">
+                    <span className="score-value">{team.total_score.toFixed(1)}</span>
+                    <span className="score-label">points</span>
+                  </div>
+                  <div className="team-roster">
+                    {team.players?.map(p => (
+                      <PlayerCard key={p.id} player={p} compact showScore />
+                    ))}
+                  </div>
+                </div>
+              </Link>
+            ))
+          )}
+        </div>
+      )}
+
+      {activeTab === 'rules' && (
+        <div className="rules-table-container">
+          <table className="rules-table">
+            <thead>
+              <tr>
+                <th>Event</th>
+                <th>Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rules.map(rule => (
+                <tr key={rule.id} className={rule.points < 0 ? 'negative-row' : ''}>
+                  <td>{rule.description}</td>
+                  <td className={`points-cell ${rule.points < 0 ? 'negative' : 'positive'}`}>
+                    {rule.is_variable ? 'Variable' : (rule.points > 0 ? '+' : '') + rule.points}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {activeTab === 'log' && (
+        <div className="score-log">
+          {events.length === 0 ? (
+            <div className="empty-state">No scoring events yet.</div>
+          ) : (
+            <table className="log-table">
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Event</th>
+                  <th>Points</th>
+                  <th>Episode</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {events.map(event => (
+                  <tr key={event.id}>
+                    <td className="log-player">{event.player_name}</td>
+                    <td>{event.event_type.replace(/_/g, ' ')}</td>
+                    <td className={`points-cell ${event.points >= 0 ? 'positive' : 'negative'}`}>
+                      {event.points > 0 ? '+' : ''}{event.points}
+                    </td>
+                    <td>{event.episode || '-'}</td>
+                    <td>{new Date(event.created_at).toLocaleDateString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
